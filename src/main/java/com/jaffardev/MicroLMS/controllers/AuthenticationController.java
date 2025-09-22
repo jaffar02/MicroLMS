@@ -1,21 +1,25 @@
 package com.jaffardev.MicroLMS.controllers;
 
 import com.jaffardev.MicroLMS.config.JwtConfig;
+import com.jaffardev.MicroLMS.dto.CreateCourseRequest;
 import com.jaffardev.MicroLMS.dto.JwtResponse;
 import com.jaffardev.MicroLMS.dto.LoginUserRequest;
 import com.jaffardev.MicroLMS.dto.RegisterUserRequest;
+import com.jaffardev.MicroLMS.model.Course;
 import com.jaffardev.MicroLMS.model.Role;
 import com.jaffardev.MicroLMS.model.User;
+import com.jaffardev.MicroLMS.repository.CourseRepository;
+import com.jaffardev.MicroLMS.repository.UserRepository;
 import com.jaffardev.MicroLMS.security.JwtFilter;
 import com.jaffardev.MicroLMS.service.AuthenticationService;
+import com.jaffardev.MicroLMS.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,18 +31,14 @@ import java.util.Map;
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
+    private final UserRepository userRepository;
     private final JwtConfig jwtConfig;
 
     @PostMapping("/register")
-    public ResponseEntity<JwtResponse> registerUser(@Valid @RequestBody RegisterUserRequest userRequest) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterUserRequest userRequest) {
         User isReg = authenticationService.registerUser(userRequest);
-        String msg = (isReg != null ? "Registration Success" : "Registration Failed");
-        List<String> roles = userRequest.getRoles()
-                .stream()
-                .map(Role::getName)
-                .toList();
-        String token = jwtConfig.generateToken(userRequest.getEmail(), roles);
-        return ResponseEntity.ok(JwtResponse.builder().token(token).build());
+        String msg = (isReg != null ? "Registration successful. Please verify your email before logging in." : "Registration Failed");
+        return ResponseEntity.ok(msg);
     }
 
     @PostMapping("/login")
@@ -46,6 +46,11 @@ public class AuthenticationController {
         try {
             User user = authenticationService.loginUser(userRequest);
             if (user != null) {
+                if (!user.isEnabled()) {  // or user.isVerified() or your field
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body("Account not verified. Please verify your email.");
+                }
+
                 // Extract roles as List<String>
                 List<String> roles = user.getRoles()
                         .stream()
@@ -73,4 +78,17 @@ public class AuthenticationController {
         }
     }
 
+    @GetMapping("/verify")
+    public String verifyUser(@RequestParam("code") String code) {
+        User user = userRepository.findByVerificationCode(code);
+        if (user == null) {
+            return "Verification failed: invalid code";
+        }
+
+        user.setEnabled(true);
+        user.setVerificationCode(null); // clear the code
+        userRepository.save(user);
+
+        return "Verification successful! You can now login.";
+    }
 }

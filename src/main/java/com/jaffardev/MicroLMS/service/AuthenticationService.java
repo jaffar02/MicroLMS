@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public User registerUser(RegisterUserRequest userRequest) {
         // TODO Add user to db but first check if same exist through email.
@@ -41,6 +43,9 @@ public class AuthenticationService {
             roles.add(role);
         }
         user.setRoles(roles);
+        user.setEnabled(false);  // not verified yet
+        user.setVerificationCode(UUID.randomUUID().toString());
+        emailService.sendVerificationEmail(user);
 
         return userRepository.save(user);
     }

@@ -28,6 +28,8 @@ public class MicroLmsApplication implements CommandLineRunner {
 		}
 
 		System.out.println("Roles initialized.");
+
+
 	}
 
 }

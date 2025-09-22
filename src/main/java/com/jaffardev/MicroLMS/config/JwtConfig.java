@@ -20,13 +20,15 @@ import java.util.List;
 @Component
 public class JwtConfig {
 
+    @Value("${app.jwt.secret}")
+    private String secretKeyString;
+
     private SecretKey key;
 
     @PostConstruct
     public void init() {
         // The secret must be >= 256 bits for HS256
-        SecretKey secretkey = Jwts.SIG.HS256.key().build();
-        key = Keys.hmacShaKeyFor(secretkey.getEncoded());
+        key = Keys.hmacShaKeyFor(secretKeyString.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String email, List<String> roles) {

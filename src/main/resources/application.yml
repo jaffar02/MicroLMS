@@ -1,7 +1,7 @@
 app:
   jwt:
-    secret: mySuperSecretKeyForJWTs
-    expirationMs: 86400000  # 24h
+    secret: YOUR_VERY_LONG_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG
+    expirationMs: 86400000
 
 spring:
   datasource:
@@ -13,3 +13,17 @@ spring:
       ddl-auto: update
     properties:
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+  application:
+    name: MicroLMS
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: jaffarbangash787@gmail.com
+    password: kszjgbwvyekotrrr
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true

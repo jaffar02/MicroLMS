@@ -20,6 +20,9 @@ public class User {
     private String email;
     private String password;
     private String fullName;
+    @Column(nullable = false)
+    private boolean enabled = false;  // initially false
+    private String verificationCode; // UUID or similar unique code
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

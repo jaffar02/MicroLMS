@@ -6,11 +6,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
 @EnableTransactionManagement
 @RequiredArgsConstructor
+@EnableAsync
 public class MicroLmsApplication implements CommandLineRunner {
 
 	private final RoleRepository roleRepository; // inject repository

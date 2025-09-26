@@ -3,6 +3,14 @@ app:
     secret: YOUR_VERY_LONG_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG
     expirationMs: 86400000
 
+logging:
+  level:
+    org.springframework.security: DEBUG   # Logs Spring Security internals (auth, filters, access decisions)
+    org.hibernate.SQL: DEBUG              # Logs generated SQL queries
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # (optional) Logs SQL parameter values
+    org.springframework.security.access: DEBUG
+    org.springframework.security.web.access: DEBUG
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/minilmsdb
@@ -27,3 +35,8 @@ spring:
           starttls:
             enable: true
             required: true
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB

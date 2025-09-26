@@ -1,10 +1,7 @@
 package com.jaffardev.MicroLMS.controllers;
 
 import com.jaffardev.MicroLMS.config.JwtConfig;
-import com.jaffardev.MicroLMS.dto.CreateCourseRequest;
-import com.jaffardev.MicroLMS.dto.JwtResponse;
-import com.jaffardev.MicroLMS.dto.LoginUserRequest;
-import com.jaffardev.MicroLMS.dto.RegisterUserRequest;
+import com.jaffardev.MicroLMS.dto.*;
 import com.jaffardev.MicroLMS.model.Course;
 import com.jaffardev.MicroLMS.model.Role;
 import com.jaffardev.MicroLMS.model.User;
@@ -30,8 +27,9 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthenticationController {
 
+    //TODO Update account info.
+    //TODO Update accound password.
     private final AuthenticationService authenticationService;
-    private final UserRepository userRepository;
     private final JwtConfig jwtConfig;
 
     @PostMapping("/register")
@@ -79,16 +77,52 @@ public class AuthenticationController {
     }
 
     @GetMapping("/verify")
-    public String verifyUser(@RequestParam("code") String code) {
-        User user = userRepository.findByVerificationCode(code);
-        if (user == null) {
-            return "Verification failed: invalid code";
+    public ResponseEntity<?> verifyUser(@RequestParam("code") String code) {
+        try {
+            boolean state = authenticationService.verifyUser(code);
+            if (!state){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Verification failed: invalid code");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Login failed: " + e.getMessage());
         }
 
-        user.setEnabled(true);
-        user.setVerificationCode(null); // clear the code
-        userRepository.save(user);
+        return ResponseEntity.ok("Verification successful.");
+    }
 
-        return "Verification successful! You can now login.";
+    @PutMapping("/update-info")
+    public ResponseEntity<?> updateUserInfo(@Valid @RequestBody UpdateUserRequest updateUserRequest,
+                                            Authentication authentication){
+        try {
+            String email = authentication.getName();
+            authenticationService.updateUser(updateUserRequest, email);
+            return ResponseEntity.ok("User info updated.");
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Update info failed: " + e.getMessage());
+        }
+    }
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+        try {
+            authenticationService.initiatePasswordReset(forgotPasswordRequest.getEmail());
+            return ResponseEntity.ok("Password reset link sent to your email.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-pass")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest resetPasswordRequest) {
+        boolean success = authenticationService.resetPassword(resetPasswordRequest.getCode(),
+                resetPasswordRequest.getNewPassword());
+        if (!success) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired reset code");
+        }
+        return ResponseEntity.ok("Password reset successful!");
     }
 }

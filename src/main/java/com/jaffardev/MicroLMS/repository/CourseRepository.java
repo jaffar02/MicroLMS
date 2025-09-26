@@ -20,4 +20,5 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     Optional<Course> findByInviteCode(String inviteCode);
 
     boolean existsByInviteCode(String inviteCode);
+
 }

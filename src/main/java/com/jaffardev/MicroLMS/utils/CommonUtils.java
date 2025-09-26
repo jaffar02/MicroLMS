@@ -1,8 +1,12 @@
 package com.jaffardev.MicroLMS.utils;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.UUID;
+
+import static com.jaffardev.MicroLMS.controllers.AssignmentController.ALLOWED_EXTENSIONS;
 
 public class CommonUtils {
 
@@ -17,5 +21,13 @@ public class CommonUtils {
         }
 
         return code.toString();
+    }
+
+    public static boolean isValidFile(MultipartFile file) {
+        String filename = file.getOriginalFilename();
+        if (filename == null) return false;
+
+        String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+        return ALLOWED_EXTENSIONS.contains(ext);
     }
 }

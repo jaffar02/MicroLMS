@@ -3,14 +3,17 @@ package com.jaffardev.MicroLMS.service;
 import com.jaffardev.MicroLMS.dto.CreateCourseRequest;
 import com.jaffardev.MicroLMS.dto.CreateCourseResponse;
 import com.jaffardev.MicroLMS.dto.ListCoursesResponse;
+import com.jaffardev.MicroLMS.dto.UpdateCourseRequest;
 import com.jaffardev.MicroLMS.model.Course;
 import com.jaffardev.MicroLMS.model.User;
 import com.jaffardev.MicroLMS.repository.CourseRepository;
 import com.jaffardev.MicroLMS.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.jaffardev.MicroLMS.utils.CommonUtils.generateInviteCode;
@@ -33,6 +36,26 @@ public class CourseService {
         course.setDescription(request.getDescription());
         course.setTeacher(teacher);
         course.setInviteCode(generateUniqueInviteCode());
+
+        Course savedCourse = courseRepository.save(course);
+        return mapToCourseResponse(savedCourse);
+    }
+
+    public CreateCourseResponse updateCourse(UpdateCourseRequest request, String teacherEmail) {
+        User teacher = userRepository.findByEmail(teacherEmail)
+                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+        if (teacher.getRoles().stream().noneMatch(role -> role.getName().equals("TEACHER"))) {
+            throw new RuntimeException("Only teachers can update courses");
+        }
+
+        Optional<Course> existingCourse = courseRepository.findById(request.getId());
+        if (existingCourse.isEmpty()) {
+            throw new RuntimeException("Course does not exist.");
+        }
+
+        Course course = existingCourse.get();
+        course.setTitle(request.getTitle());
+        course.setDescription(request.getDescription());
 
         Course savedCourse = courseRepository.save(course);
         return mapToCourseResponse(savedCourse);
@@ -139,6 +162,7 @@ public class CourseService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void deleteCourse(Long courseId, String teacherEmail) {
         User teacher = userRepository.findByEmail(teacherEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -159,7 +183,11 @@ public class CourseService {
             throw new RuntimeException("You are not authorized to delete this course");
         }
 
-        courseRepository.delete(course);
+        try {
+            courseRepository.delete(course);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

@@ -6,7 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -30,7 +32,7 @@ public class Course {
     @JoinColumn(name = "teacher_id")
     private User teacher;
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "course_students",
             joinColumns = @JoinColumn(name = "course_id"),
@@ -39,5 +41,5 @@ public class Course {
     private Set<User> students = new HashSet<>();
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Assignment> assignments = new HashSet<>();
+    private List<Assignment> assignments = new ArrayList<>();
 }

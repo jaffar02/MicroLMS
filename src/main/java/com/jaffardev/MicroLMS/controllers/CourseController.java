@@ -9,6 +9,7 @@ import com.jaffardev.MicroLMS.service.CourseService;
 import com.jaffardev.MicroLMS.utils.JwtUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +22,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/course")
+@Slf4j
 public class CourseController {
     private final CourseService courseService;
     private final UserRepository userRepository;
@@ -40,8 +42,21 @@ public class CourseController {
         }
     }
 
+    @PutMapping("/update")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<?> updateCourse(@Valid @RequestBody UpdateCourseRequest courseRequest,
+                                          Authentication authentication) {
+        try {
+            String teacherEmail = authentication.getName();
+            CreateCourseResponse course = courseService.updateCourse(courseRequest, teacherEmail);
+            return ResponseEntity.ok(course);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
 
-    @GetMapping("/enroll")
+    @PostMapping("/enroll")
     public ResponseEntity<?> enrollStudent(@RequestBody EnrollmentRequest request,
                                            @RequestHeader("Authorization") String authHeader) {
         try {
@@ -56,7 +71,7 @@ public class CourseController {
         }
     }
 
-    @PostMapping("/unenroll")
+    @DeleteMapping("/unenroll")
     public ResponseEntity<?> unenrollStudent(@RequestBody UnenrollRequest request,
                                              @RequestHeader("Authorization") String authHeader) {
         try {
@@ -82,7 +97,7 @@ public class CourseController {
         }
     }
 
-    @DeleteMapping("/courses/{courseId}")
+    @DeleteMapping("/{courseId}")
     public ResponseEntity<?> deleteCourse(@PathVariable Long courseId,
                                           @RequestHeader("Authorization") String authHeader) {
         try {

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,6 +19,15 @@ public class EmailService {
     private final JavaMailSender mailSender;
 
     public void sendSimpleEmail(String to, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
+
+    @Async
+    public void sendSimpleEmailAsync(String to, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
         message.setSubject(subject);
@@ -53,6 +63,17 @@ public class EmailService {
         content = content.replace("[[URL]]", verifyURL);
 
         sendHtmlEmail(toAddress, subject, content);
+    }
+
+    public void sendPasswordResetEmail(User user) {
+        // This link can point to your frontend reset page instead of backend
+        String resetLink = "http://frontend-app.com/reset-password?code=" + user.getResetCode();
+        String subject = "Password Reset Request";
+        String body = "Click the link to reset your password: " + resetLink;
+        sendSimpleEmail(user.getEmail(), subject, body);
+
+        /* There on front end we can simply send req to reset password endpoint along with reset code and
+           new password. */
     }
 
 }

@@ -2,6 +2,7 @@ package com.jaffardev.MicroLMS.service;
 
 import com.jaffardev.MicroLMS.dto.LoginUserRequest;
 import com.jaffardev.MicroLMS.dto.RegisterUserRequest;
+import com.jaffardev.MicroLMS.dto.UpdateUserRequest;
 import com.jaffardev.MicroLMS.model.Role;
 import com.jaffardev.MicroLMS.model.User;
 import com.jaffardev.MicroLMS.repository.RoleRepository;
@@ -12,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -28,7 +30,6 @@ public class AuthenticationService {
     private final EmailService emailService;
 
     public User registerUser(RegisterUserRequest userRequest) {
-        // TODO Add user to db but first check if same exist through email.
         if (userRepository.existsByEmail(userRequest.getEmail())) {
             throw new IllegalArgumentException("Email already in use");
         }
@@ -51,7 +52,6 @@ public class AuthenticationService {
     }
 
     public User loginUser(LoginUserRequest userRequest) {
-        // TODO Add user to db but first check if same exist through email.
         User user = userRepository.findByEmail(userRequest.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -59,5 +59,53 @@ public class AuthenticationService {
             return user;
         }
         return null;
+    }
+
+    public boolean verifyUser(String code){
+        User user = userRepository.findByVerificationCode(code);
+        if (user == null) {
+            return false;
+        }
+        user.setEnabled(true);
+        user.setVerificationCode(null); // clear the code
+        userRepository.save(user);
+        return true;
+    }
+
+
+    public void initiatePasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setResetCode(UUID.randomUUID().toString());
+        user.setResetCodeExpiry(LocalDateTime.now().plusMinutes(30)); // 30 min
+        userRepository.save(user);
+        emailService.sendPasswordResetEmail(user);
+    }
+
+    public boolean resetPassword(String code, String newPassword) {
+        User user = userRepository.findByResetCode(code);
+        if (user == null || user.getResetCodeExpiry().isBefore(LocalDateTime.now())) {
+            return false;
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetCode(null);
+        user.setResetCodeExpiry(null);
+        userRepository.save(user);
+        return true;
+    }
+
+    public void updateUser(UpdateUserRequest updateUserRequest, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (updateUserRequest.getFullName() != null && updateUserRequest.getPassword() != null){
+            throw new RuntimeException("All fields are empty.");
+        } else if (updateUserRequest.getFullName() != null) {
+            user.setFullName(updateUserRequest.getFullName());
+        } else if (updateUserRequest.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(updateUserRequest.getPassword()));
+        }
+
+        userRepository.save(user);
     }
 }

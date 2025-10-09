@@ -9,6 +9,8 @@ import com.jaffardev.MicroLMS.repository.RoleRepository;
 import com.jaffardev.MicroLMS.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +43,8 @@ public class AuthenticationService {
         for (Role roleFromRequest : userRequest.getRoles()) {
             Role role = roleRepository.findByName(roleFromRequest.getName())
                     .orElseThrow(() -> new RuntimeException("Role not found: " + roleFromRequest.getName()));
+            if (role.getName().equals("ADMIN"))
+                throw new RuntimeException("Invalid role!");
             roles.add(role);
         }
         user.setRoles(roles);
@@ -51,9 +55,21 @@ public class AuthenticationService {
         return userRepository.save(user);
     }
 
+    @Transactional(noRollbackFor = RuntimeException.class)
     public User loginUser(LoginUserRequest userRequest) {
         User user = userRepository.findByEmail(userRequest.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isEnabled()) {  // or user.isVerified() or your field
+            user.setVerificationCode(UUID.randomUUID().toString());
+            try {
+                userRepository.saveAndFlush(user);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            emailService.sendVerificationEmail(user);
+            throw new RuntimeException("Account not verified. Please verify your email.");
+        }
 
         if(passwordEncoder.matches(userRequest.getPassword(), user.getPassword())) {
             return user;
@@ -82,6 +98,12 @@ public class AuthenticationService {
         emailService.sendPasswordResetEmail(user);
     }
 
+
+    public boolean validateResetCode(String code) {
+        User user = userRepository.findByResetCode(code);
+        return user != null && !user.getResetCodeExpiry().isBefore(LocalDateTime.now());
+    }
+
     public boolean resetPassword(String code, String newPassword) {
         User user = userRepository.findByResetCode(code);
         if (user == null || user.getResetCodeExpiry().isBefore(LocalDateTime.now())) {
@@ -107,5 +129,26 @@ public class AuthenticationService {
         }
 
         userRepository.save(user);
+    }
+
+    public void deleteUser(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        userRepository.delete(user);
+    }
+
+    public void deleteUser(String email, String adminMail) {
+
+        User admin = userRepository.findByEmail(adminMail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Specified user not found"));
+
+        if (admin.getRoles().stream().noneMatch(role -> role.getName().equals("ADMIN"))) {
+            throw new RuntimeException("Only admin account has rights to delete account!");
+        }
+
+        userRepository.delete(user);
     }
 }

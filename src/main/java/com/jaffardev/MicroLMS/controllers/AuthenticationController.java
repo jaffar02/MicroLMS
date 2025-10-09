@@ -10,6 +10,7 @@ import com.jaffardev.MicroLMS.repository.UserRepository;
 import com.jaffardev.MicroLMS.security.JwtFilter;
 import com.jaffardev.MicroLMS.service.AuthenticationService;
 import com.jaffardev.MicroLMS.service.CourseService;
+import com.jaffardev.MicroLMS.service.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,15 +22,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthenticationController {
 
-    //TODO Update account info.
-    //TODO Update accound password.
     private final AuthenticationService authenticationService;
+    private final EmailService emailService;
     private final JwtConfig jwtConfig;
 
     @PostMapping("/register")
@@ -39,16 +40,35 @@ public class AuthenticationController {
         return ResponseEntity.ok(msg);
     }
 
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteUser(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            authenticationService.deleteUser(email);
+            return ResponseEntity.ok("Account deleted successfully!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete-admin")
+    public ResponseEntity<String> deleteUser(@Valid @RequestBody DeleteUserRequest deleteUserRequest,
+                                             Authentication authentication) {
+        try {
+            String adminEmail = authentication.getName();
+            authenticationService.deleteUser(deleteUserRequest.getEmail(), adminEmail);
+            return ResponseEntity.ok("Account deleted successfully!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    //TODO Do this work in service instead.
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@Valid @RequestBody LoginUserRequest userRequest) {
         try {
             User user = authenticationService.loginUser(userRequest);
             if (user != null) {
-                if (!user.isEnabled()) {  // or user.isVerified() or your field
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body("Account not verified. Please verify your email.");
-                }
-
                 // Extract roles as List<String>
                 List<String> roles = user.getRoles()
                         .stream()
@@ -72,7 +92,7 @@ public class AuthenticationController {
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Login failed: " + e.getMessage());
+                    .body(e.getMessage());
         }
     }
 
@@ -105,6 +125,19 @@ public class AuthenticationController {
         }
     }
 
+
+    @GetMapping("/validate-reset-code")
+    public ResponseEntity<?> validateResetCode(@RequestParam String code) {
+        try {
+            boolean isValid = authenticationService.validateResetCode(code);
+            if (isValid)
+                return ResponseEntity.ok(Map.of("valid", true)); // ✅ returns JSON
+            else
+                return ResponseEntity.badRequest().body(Map.of("invalid", false));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest forgotPasswordRequest) {

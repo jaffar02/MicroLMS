@@ -5,6 +5,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     public void sendSimpleEmail(String to, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -59,7 +62,7 @@ public class EmailService {
                 + "Thank you,<br>The Team.";
 
         content = content.replace("[[name]]", user.getFullName());
-        String verifyURL = "http://localhost:8080/api/auth/verify?code=" + user.getVerificationCode();
+        String verifyURL = frontendUrl + "/verify?code=" + user.getVerificationCode();
         content = content.replace("[[URL]]", verifyURL);
 
         sendHtmlEmail(toAddress, subject, content);
@@ -67,7 +70,7 @@ public class EmailService {
 
     public void sendPasswordResetEmail(User user) {
         // This link can point to your frontend reset page instead of backend
-        String resetLink = "http://frontend-app.com/reset-password?code=" + user.getResetCode();
+        String resetLink = frontendUrl + "/reset-password?code=" + user.getResetCode();
         String subject = "Password Reset Request";
         String body = "Click the link to reset your password: " + resetLink;
         sendSimpleEmail(user.getEmail(), subject, body);

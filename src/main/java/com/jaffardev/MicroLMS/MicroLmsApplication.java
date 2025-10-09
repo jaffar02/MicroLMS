@@ -27,8 +27,8 @@ public class MicroLmsApplication implements CommandLineRunner {
 		if(roleRepository.count() == 0) {
 			roleRepository.save(Role.builder().name("TEACHER").build());
 			roleRepository.save(Role.builder().name("STUDENT").build());
+			roleRepository.save(Role.builder().name("ADMIN").build());
 		}
-
 		System.out.println("Roles initialized.");
 
 

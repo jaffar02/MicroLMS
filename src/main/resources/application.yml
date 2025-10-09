@@ -2,6 +2,7 @@ app:
   jwt:
     secret: YOUR_VERY_LONG_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG
     expirationMs: 86400000
+  frontend-url: "http://localhost:5173"
 
 logging:
   level:

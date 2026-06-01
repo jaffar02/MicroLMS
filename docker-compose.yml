@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: microlms-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: minilmsdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - microlms-network
+
+  backend:
+    image: jaffar786/microlms-backend:latest
+    container_name: microlms-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/minilmsdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123
+      - APP_FRONTEND_URL=http://localhost
+    networks:
+      - microlms-network
+    depends_on:
+      - postgres-db
+
+  client:
+    image: jaffar786/microlms-client:latest
+    container_name: microlms-client
+    ports:
+      - "80:80"
+    networks:
+      - microlms-network
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+
+networks:
+  microlms-network:
+    driver: bridge

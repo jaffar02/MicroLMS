@@ -1,0 +1,43 @@
+app:
+  jwt:
+    secret: YOUR_VERY_LONG_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG
+    expirationMs: 86400000
+  frontend-urls: "http://localhost,http://localhost:5173"
+
+logging:
+  level:
+    org.springframework.security: DEBUG   # Logs Spring Security internals (auth, filters, access decisions)
+    org.hibernate.SQL: DEBUG              # Logs generated SQL queries
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # (optional) Logs SQL parameter values
+    org.springframework.security.access: DEBUG
+    org.springframework.security.web.access: DEBUG
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/minilmsdb
+    username: postgres
+    password: 123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+  application:
+    name: MicroLMS
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: jaffarbangash787@gmail.com
+    password: kszjgbwvyekotrrr
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB

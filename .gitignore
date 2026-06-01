@@ -1,0 +1,35 @@
+# --- System / IDE Files ---
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Backend (Spring Boot / Maven) Dependency & Build Output ---
+target/
+*.jar
+*.war
+*.ear
+.mvn/wrapper/
+.metadata/
+bin/
+.classpath
+.project
+.settings/
+
+# --- Frontend (React / Node / Vite) Logs & Modules ---
+node_modules/
+/dist
+/build
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

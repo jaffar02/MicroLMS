@@ -43,8 +43,8 @@ The fastest way to run MicroLMS locally. **No Java, Node.js, or PostgreSQL insta
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/jaffar786/microlms.git
-cd microlms
+git clone https://github.com/jaffar786/MicroLMS.git
+cd MicroLMS
 ```
 
 ### 2. Start All Services
@@ -79,7 +79,7 @@ To run services natively outside of Docker:
 
 ```bash
 # 1. Navigate to the backend directory
-cd backend
+cd MicroLMS
 
 # 2. Configure your environment (optional)
 #    Edit src/main/resources/application.yml to update app.frontend-urls
@@ -92,7 +92,7 @@ cd backend
 
 ```bash
 # 1. Navigate to the frontend directory
-cd frontend
+cd MicroLMSClient
 
 # 2. Install dependencies
 npm install

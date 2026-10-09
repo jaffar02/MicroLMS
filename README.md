@@ -43,7 +43,7 @@ The fastest way to run MicroLMS locally. **No Java, Node.js, or PostgreSQL insta
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/jaffar786/MicroLMS.git
+git clone https://github.com/jaffar02/MicroLMS.git
 cd MicroLMS
 ```
 
